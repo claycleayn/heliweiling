@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # 传感器 + 发射器组成一个组（通过共享卷通信）
+  sensor:
+    image: random-sensor
+    volumes:
+      - ./data/sampler_${INSTANCE_ID}:/data   # 共享卷
+    environment:
+      - INSTANCE_ID=${INSTANCE_ID}
+    # 传感器容器运行完采样就退出
+    command: ["/usr/local/bin/random_sensor", "50"]   # 50次采样
+
+  emitter:
+    image: sensor-emitter
+    volumes:
+      - ./data/sampler_${INSTANCE_ID}:/data   # 相同卷
+    environment:
+      - DEVICE_ID=sampler_${INSTANCE_ID}
+    depends_on:
+      - sensor
+    restart: unless-stopped   # 发射器一直运行，但传感器退出后它也会空闲
